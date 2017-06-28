@@ -1,0 +1,6 @@
+{
+	"memcache_src": {"addresses":["localhost:12211"]},
+	"memcache_dest": {"addresses":["localhost:11226","localhost:11227"]},
+	"n_threads": 20,
+	"move": true
+}
