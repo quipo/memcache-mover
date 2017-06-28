@@ -46,6 +46,13 @@ Disclaimer
 
 This tool comes with no guarantees, and I'm not responsible for any damage caused by it.
 
+TODO
+----
+* Process different servers/slabs in parallel, with control over concurrency levels to limit how hard memcached is hit
+* Improve stats
+* Add functionality to read keys from a file instead of reading them from memcached directly
+* More docs / tests
+
 
 Author
 ------
