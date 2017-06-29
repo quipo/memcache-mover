@@ -8,7 +8,10 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
+// SleepOnTempError how long to wait before a retry in case of a network glitch
 var SleepOnTempError = 20 * time.Millisecond
+
+// MaxRetriesOnError how many times to retry in case of temporary connection issues
 var MaxRetriesOnError = 3
 
 func readItem(client *memcache.Client, key string) (*memcache.Item, error) {

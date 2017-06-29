@@ -9,6 +9,9 @@ import (
 	"github.com/bradfitz/gomemcache/memcache"
 )
 
+// SlabProcessor migrates data from a single slab, by reading a chunk of keys and copying them
+// over one by one. If the `Move` flag is set, successfully migrated entries are removed from
+// the source node
 type SlabProcessor struct {
 	Name                  string
 	Slab                  int64
@@ -22,13 +25,15 @@ type SlabProcessor struct {
 	stats       Stats
 }
 
-func NewSlabProcessor(srcMemcacheAddr string, destMemcacheAddr []string, slab int64, batchSize int64) *SlabProcessor {
+// NewSlabProcessor returns a new processor which can own the operations from a specific memcached node/slab
+func NewSlabProcessor(srcMemcacheAddr string, destMemcacheAddr []string, slab int64, batchSize int64, move bool) *SlabProcessor {
 	p := &SlabProcessor{
 		Name:                  fmt.Sprintf("Slab Processor on host %s - slab %d (batch size: %d)", srcMemcacheAddr, slab, batchSize),
 		Slab:                  slab,
 		BatchSize:             batchSize,
 		MemcacheSrcAddress:    srcMemcacheAddr,
 		MemcacheDestAddresses: destMemcacheAddr,
+		Move: move,
 	}
 
 	p.stats = Stats{
@@ -38,6 +43,11 @@ func NewSlabProcessor(srcMemcacheAddr string, destMemcacheAddr []string, slab in
 	return p
 }
 
+// RunOnce reads the max amount of keys from the given slab
+// (limited to https://github.com/memcached/memcached/issues/153)
+// and migrates the corresponding items to the destination cluster.
+// When the `Move` flag is set, the successfully migrated items are removed from the source server,
+// making it possible to request new batches in a loop until all the data is migrated.
 func (p *SlabProcessor) RunOnce() {
 	if !p.initialised {
 		p.stats.StartTime = time.Now()
@@ -81,14 +91,18 @@ func (p *SlabProcessor) RunOnce() {
 	p.stats.EndTime = time.Now()
 }
 
+// Run will implement similar logic to ServerProcessor.Run(), i.e. will iterate through
+// pages of keys and migrate all the data until the source slab is empty
 func (p *SlabProcessor) Run() {
 
 }
 
+// GetStats returns stats collected doing a run
 func (p *SlabProcessor) GetStats() Stats {
 	return p.stats
 }
 
+// runWriter writes the items read by runReader
 func (p *SlabProcessor) runWriter(memcacheAddresses []string, ch <-chan *memcache.Item, chCopiedKeys chan<- string, resCh chan<- Stats) {
 	stats := Stats{}
 	client := memcache.New(memcacheAddresses...)
@@ -106,6 +120,7 @@ func (p *SlabProcessor) runWriter(memcacheAddresses []string, ch <-chan *memcach
 	close(chCopiedKeys)
 }
 
+// runReader reads the keys read from a slab, and passes the retrieved items to runWriter
 func (p *SlabProcessor) runReader(memcacheAddresses []string, chKeys <-chan string, chItems chan<- *memcache.Item, resCh chan<- Stats) {
 	stats := Stats{}
 	client := memcache.New(memcacheAddresses...)
@@ -123,6 +138,7 @@ func (p *SlabProcessor) runReader(memcacheAddresses []string, chKeys <-chan stri
 	close(chItems)
 }
 
+// runEraser optionally deletes the migrated entries from the source node
 func (p *SlabProcessor) runEraser(memcacheAddresses []string, chCopiedKeys <-chan string, resCh chan<- Stats) {
 	stats := Stats{}
 	client := memcache.New(memcacheAddresses...)
@@ -138,6 +154,7 @@ func (p *SlabProcessor) runEraser(memcacheAddresses []string, chCopiedKeys <-cha
 	resCh <- stats
 }
 
+// noOp empties the input channel of migrated entries. To be used in alternative to runEraser when the `Move` flag is false
 func (p *SlabProcessor) noOp(memcacheAddresses []string, chCopiedKeys <-chan string, resCh chan<- Stats) {
 	stats := Stats{}
 	for _ = range chCopiedKeys {

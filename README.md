@@ -49,9 +49,12 @@ This tool comes with no guarantees, and I'm not responsible for any damage cause
 TODO
 ----
 
-* Process different servers/slabs in parallel, with control over concurrency levels to limit how hard memcached is hit
+* Process different servers/slabs in parallel, with control over concurrency levels to limit how hard memcached is hit.
+  I already tested a parallel version, but leaving this code operating in serial mode until I add throttling in, or it can be *too* effective ;-) and cause memcache to crash under load.
 * Improve stats
+* Implement looping logic in SlabProcessor
 * Add functionality to read keys from a file instead of reading them from memcached directly
+* Use GetMulti() to reduce network connection requests
 * More docs / tests
 
 

@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Stats collects some stats from a single run over a slab
 type Stats struct {
 	ProcessorName string
 	StartTime     time.Time
@@ -15,6 +16,7 @@ type Stats struct {
 	DelErrors     uint64
 }
 
+// StatsSummary can aggregate stats from individual runs
 type StatsSummary struct {
 	Title     string
 	Duration  time.Duration
@@ -24,6 +26,7 @@ type StatsSummary struct {
 	DelErrors uint64
 }
 
+// Print outputs the collected stats
 func (s Stats) Print() {
 	log.Printf("--[PARTIAL STATS %s]------------\n", s.ProcessorName)
 	log.Printf("Elapsed time: \t%s\n", s.EndTime.Sub(s.StartTime).String())
@@ -33,6 +36,7 @@ func (s Stats) Print() {
 	log.Printf("DELETE errors: \t%d\n", s.DelErrors)
 }
 
+// Import can load stats from a single run into the summary
 func (sum *StatsSummary) Import(s Stats) {
 	sum.Duration += s.EndTime.Sub(s.StartTime)
 	sum.Processed += s.Processed
@@ -41,6 +45,7 @@ func (sum *StatsSummary) Import(s Stats) {
 	sum.DelErrors += s.DelErrors
 }
 
+// Merge can merge two summaries together
 func (sum *StatsSummary) Merge(s StatsSummary) {
 	sum.Duration += s.Duration
 	sum.Processed += s.Processed
@@ -49,6 +54,7 @@ func (sum *StatsSummary) Merge(s StatsSummary) {
 	sum.DelErrors += s.DelErrors
 }
 
+// Print outputs the stat summary
 func (sum *StatsSummary) Print() {
 	log.Println()
 	log.Printf("--[SUMMARY %s]------------\n", sum.Title)

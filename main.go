@@ -45,13 +45,8 @@ func main() {
 
 	for _, srcAddr := range conf.MemcacheSrc.Addresses {
 		// read keys directly from the source memcache instance
-		proc := NewServerProcessor(srcAddr, conf.MemcacheDest.Addresses)
-		if conf.Move {
-			proc.Move = true
-			proc.Run()
-		} else {
-			proc.RunOnce()
-		}
+		proc := NewServerProcessor(srcAddr, conf.MemcacheDest.Addresses, conf.Move)
+		proc.Run()
 		st := proc.GetStatsSummary()
 		st.Print()
 		summary.Merge(st)
