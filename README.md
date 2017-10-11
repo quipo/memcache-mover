@@ -56,6 +56,7 @@ TODO
 * Add functionality to read keys from a file instead of reading them from memcached directly
 * Use GetMulti() to reduce network connection requests
 * More docs / tests
+* Add proper project structure, moving some utility functions to a library package
 
 
 Author
